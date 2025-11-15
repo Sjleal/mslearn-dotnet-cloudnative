@@ -6,11 +6,48 @@ services:
     image: store:latest
     environment: 
       - ProductEndpoint=http://backend:8080
+      - ZIPKIN_URL=http://zipkin:9411
+      - APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=4606127f-2d68-43bb-b75f-668080acb8af;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=33eb7246-bc7e-42f2-af1c-8a45610911e7
     ports:
       - "32000:8080"
     depends_on: 
       - backend
+      - prometheus
+      - zipkin
   backend:
     image: products:latest
+    environment: 
+      - ZIPKIN_URL=http://zipkin:9411
+      - APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=4606127f-2d68-43bb-b75f-668080acb8af;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=33eb7246-bc7e-42f2-af1c-8a45610911e7
     ports: 
       - "32001:8080"
+    depends_on: 
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./grafana/datasource:/etc/grafana/provisioning/datasources
+  
+  zipkin:
+    image: openzipkin/zipkin
+    ports:
+      - 9411:9411
