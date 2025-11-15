@@ -70,8 +70,9 @@ public class ProductService
 
   public async Task<bool> CreateOrder(Order order)
   {
-      try
-      {
+    try
+    {
+          _logger.LogOrders(order);
           var response = await httpClient.PostAsync("/api/Order", new StringContent(JsonSerializer.Serialize(order), Encoding.UTF8, "application/json"));
 
           if (response.IsSuccessStatusCode)
@@ -88,6 +89,11 @@ public class ProductService
           return false;
       }
   }
-
+  
 
 }
+public static partial class Log
+  {
+      [LoggerMessage(1, LogLevel.Information, "Placed Order: {order}")]
+      public static partial void LogOrders(this ILogger logger, [LogProperties] Order order);
+  }
